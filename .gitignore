@@ -1,0 +1,13 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+.vscode/
+*.code-workspace
+*.odt
+*.log
+Workflow
+test_dict.py
+my_tests/conf.json
+conf.json
