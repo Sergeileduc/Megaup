@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.append('../')
 
-from utils.mega_accounts_choice import AccountChoice
+from utils.mega_accounts_choice import AccountChoice  # noqa: E402
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 config_file = os.path.join(dir_path, "conf.json")

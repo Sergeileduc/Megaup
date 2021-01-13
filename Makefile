@@ -49,7 +49,7 @@ clean-test: ## remove test and coverage artifacts
 	find . -name '.pytest_cache' -exec rm -fr {} +
 
 lint: ## check style with flake8
-	flake8 py_casim tests
+	flake8 megagui.py megaup.py utils tests mytests
 
 test: ## run tests quickly with the default Python
 	pytest

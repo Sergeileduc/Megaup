@@ -8,7 +8,7 @@ from mega import Mega
 import logging
 from logging.handlers import RotatingFileHandler
 
-from utils.mega_cls import MegaDict
+from utils.mega_cls import MegaDict  # noqa: F401
 
 
 def select_folders(files_dict):
@@ -77,7 +77,7 @@ print(files)
 # print("doc desc")
 # print(doc_desc)
 
-# nested_desc = mega.find_path_descriptor("/DCtrad/Nested Folder/More test (2020)", all_dict)
+# nested_desc = mega.find_path_descriptor("/DCtrad/Nested Folder/More test (2020)", all_dict)  # noqa: E501
 # print("nested desc")
 # print(nested_desc)
 
@@ -130,7 +130,7 @@ print(files)
 # depth 1
 # descr = mega.find_path_descriptor(list_folders[1])
 # raw_dict = mega.get_files_in_node(descr)
-# raw_folders = {key: value for (key, value) in raw_dict.items() if value['t'] == 1}
+# raw_folders = {key: value for (key, value) in raw_dict.items() if value['t'] == 1}  # noqa: E501
 # list_folders = [fold['a']['n'] for fold in raw_folders.values()]
 # print(list_folders)
 

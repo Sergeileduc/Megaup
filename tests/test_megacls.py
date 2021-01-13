@@ -4,7 +4,7 @@
 
 from dotenv import load_dotenv
 import os
-import pytest
+# import pytest
 
 from mega import Mega
 from utils.mega_cls import MegaDict
@@ -48,7 +48,7 @@ def test_mega():
     # print("doc desc")
     # print(doc_desc)
 
-    # nested_desc = mega.find_path_descriptor("/DCtrad/Nested Folder/More test (2020)", all_dict)
+    # nested_desc = mega.find_path_descriptor("/DCtrad/Nested Folder/More test (2020)", all_dict)  # noqa: E501
     # # print("nested desc")
     # print(nested_desc)
 

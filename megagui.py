@@ -7,32 +7,30 @@ import logging
 import sys
 import json
 import os
-import requests
 import random
+import tkinter as tk
+from tkinter import ttk
+import tkinter.messagebox as mb
+from tkinter import END, SEL, INSERT
+import zipfile
+
+import requests
 from Crypto.Cipher import AES
+from Crypto.Util import Counter
 from mega.crypto import (
     a32_to_base64, encrypt_key, encrypt_attr,
     a32_to_str, get_chunks, str_to_a32, makebyte,
     base64_url_encode
 )
-from Crypto.Util import Counter
-
 
 # import subprocess
 # import sys
 # import logging
 # import logging.config
 
-import tkinter  # for pyinstaller
-import bs4  # for pyinstaller
+# import tkinter  # for pyinstaller
+# import bs4  # for pyinstaller
 
-import tkinter as tk
-from tkinter import ttk
-import tkinter.messagebox as mb
-
-from tkinter import END, SEL, INSERT
-
-import zipfile
 # from pathlib import Path
 
 from mega import Mega
@@ -60,7 +58,8 @@ if len(sys.argv) < 2:
 
 
 class MegaObj():
-
+    """Basic class for mega items.
+    """
     def __init__(self, raw=None):
         if raw:
             self.split_info = raw.split(maxsplit=5)
@@ -79,8 +78,10 @@ class MegaObj():
 
 
 class MegaException(Exception):
+    """Custom Exception for mega, with status code.
+    """
     def __init__(self, res, errorType):
-        if type(res) is int:
+        if isinstance(res, int):
             code = res
         else:
             code = res.status_code
@@ -90,7 +91,8 @@ class MegaException(Exception):
 
 
 class MegaClient():
-
+    """Mega client.
+    """
     def __init__(self, config_dict):
         self.conf = config_dict
         self.is_logged = False
@@ -129,7 +131,8 @@ class MegaClient():
 
 
 class MegaExplorer(tk.Toplevel):
-
+    """GUI for exploring Mega folders.
+    """
     def __init__(self, master=None, mega=None):
         tk.Toplevel.__init__(self, master)
         # self.racine = master
@@ -570,7 +573,7 @@ class UploadApp(tk.Tk):
             self.maxbytes = file_size
             self.progress["maximum"] = file_size
 
-            ul_url = self.megaclient.mega._api_request({'a': 'u', 's': file_size})['p']
+            ul_url = self.megaclient.mega._api_request({'a': 'u', 's': file_size})['p']  # noqa: E501
 
             # generate random aes key (128) for file
             ul_key = [random.randint(0, 0xFFFFFFFF) for _ in range(6)]
@@ -624,7 +627,8 @@ class UploadApp(tk.Tk):
 
             else:
                 output_file = requests.post(
-                    ul_url + "/0", data='', timeout=self.megaclient.mega.timeout
+                    ul_url + "/0", data='',
+                    timeout=self.megaclient.mega.timeout
                 )
                 completion_file_handle = output_file.text
 
@@ -647,7 +651,7 @@ class UploadApp(tk.Tk):
                 ul_key[2] ^ meta_mac[0], ul_key[3] ^ meta_mac[1], ul_key[4],
                 ul_key[5], meta_mac[0], meta_mac[1]
             ]
-            encrypted_key = a32_to_base64(encrypt_key(key, self.megaclient.mega.master_key))
+            encrypted_key = a32_to_base64(encrypt_key(key, self.megaclient.mega.master_key))  # noqa: E501
             logger.info('Sending request to update attributes')
             # update attributes
             data = self.megaclient.mega._api_request(
@@ -763,9 +767,8 @@ if zipfile.is_zipfile(local_file) and cover_bool:
     if variant_bool:
         variant = extract_cover(local_file, index=1)
         print(variant)
-        casi_upload = Casim(variant, size=redim_val)
-        casi_upload.upload_cover()
-        variant_url = casi_upload.get_share_url()
+        casi_upload = Casim(variant, resize=redim_val)
+        variant_url = casi_upload.get_link()
         os.remove(variant)
         print(variant_url)
         print(f"[url={share}][img]{cover_url}[/img] [img]{variant_url}[/img][/url]")  # noqa:E501
