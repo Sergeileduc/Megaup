@@ -1,22 +1,33 @@
-#!/usr/bin/python3
-# -*-coding:utf-8 -*-
 """Upload file to Onwcloud, extract cover, and upload to casimages.
 
 Return BBcode.
 """
 
+import logging
+import sys
 import json
 import os
-import subprocess
-import sys
+import requests
+import random
+from Crypto.Cipher import AES
+from mega.crypto import (
+    a32_to_base64, encrypt_key, encrypt_attr,
+    a32_to_str, get_chunks, str_to_a32, makebyte,
+    base64_url_encode
+)
+from Crypto.Util import Counter
+
+
+# import subprocess
+# import sys
 # import logging
 # import logging.config
 
 import tkinter  # for pyinstaller
-# import bs4  # for pyinstaller
+import bs4  # for pyinstaller
 
 import tkinter as tk
-# from tkinter import ttk
+from tkinter import ttk
 import tkinter.messagebox as mb
 
 from tkinter import END, SEL, INSERT
@@ -24,16 +35,21 @@ from tkinter import END, SEL, INSERT
 import zipfile
 # from pathlib import Path
 
-from utils.casimages import Casimages
+from mega import Mega
+from py_casim import Casim
 from utils.mega_accounts_choice import AccountChoice
 from utils.tools import extract_cover, get_base_name, no_ext
+from utils.mega_cls import MegaDict
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 config_file = os.path.join(dir_path, "conf.json")
 
 redim_val = 640
 
-cloud_dir = ""
+cloud_dir = "/"
 cover_bool = False
 variant_bool = False
 
@@ -81,102 +97,35 @@ class MegaClient():
         self.connected_user = None
         self.mail = self.conf["login"]
         self.passwd = self.conf["passwd"]
-        self.whoami_no_capture()
-        self.whoami()
-
-    def whoami_no_capture(self):
-        subprocess.run(["megaclient.exe", "whoami"])
-
-    def whoami(self):
-        cp = subprocess.run(["megaclient.exe", "whoami"],
-                            capture_output=True,
-                            encoding="utf-8")
-        # print(cp.returncode)
-        # print(cp.stdout)
-        if cp.returncode == 57:
-            print("Not logged in")
-            self.is_logged = False
-        else:
-            self.is_logged = True
-            self.connected_user = cp.stdout.splitlines()[0].split("e-mail: ")[1]  # noqa: E501
-            print(f"Logged in with user {self.connected_user}")
+        self.mega = Mega()
+        self.filelist = None
 
     def login(self):
-        # whoami = subprocess.run(["megaclient.exe", "whoami"])
-        # print("after whami")
-        # if whoami.returncode == 57:
-        #     print("Allready logged in")
-        # else:
-        #     subprocess.run(["megaclient.exe", "logout"])
-
-        if not self.is_logged:
-            print(f"Case1\nUser not logged in, login in with \n"
-                  f"{self.mail}")
-            cp = subprocess.run(["megaclient.exe", "login",
-                                self.mail,
-                                self.passwd],
-                                capture_output=True)
-
-            login_check = cp.returncode
-
-            if login_check == 0:
-                print("Login Successfull")
-                self.is_logged = True
-                self.connected_user = self.mail
-            else:
-                print("Login failed.")
-                print("Verify Username and password.")
-                sys.exit(1)
-
-        elif self.is_logged and self.connected_user != self.mail:
-            print("Case2\nUser already logged with wrong account")
-            print(f"Selected account +{self.mail}+")
-            print(f"Connected account +{self.connected_user}+")
-            self.logout()
-            cp = subprocess.run(["megaclient.exe", "login",
-                                 self.mail,
-                                 self.passwd],
-                                capture_output=True)
-
-            login_check = cp.returncode
-
-            if login_check == 0:
-                print("Login Successfull")
-                self.is_logged = True
-                self.connected_user = self.mail
-
-        else:
-            print("Case3\nallready logged in with selected account")
-            self.is_logged = True
-            self.connected_user = self.mail
+        self.mega.login(self.mail, self.passwd)
 
     def logout(self):
-        subprocess.run(["megaclient.exe", "logout"])
+        pass
+
+    def fetch_file_list(self):
+        self.filelist = self.mega.get_files()
 
     def ls_l(self, dir_):
-        complete_process = subprocess.run(["megaclient.exe", "ls", "--l", dir_],  # noqa: E501
-                                          capture_output=True,
-                                          encoding="utf-8")
-        if complete_process.returncode == 0:
-            ls_list = complete_process.stdout.splitlines()
-            return [MegaObj(i) for i in ls_list[1:]]
-        else:
-            print("Error in megaclient ls -l")
-            raise MegaException(complete_process.returncode, "MEGA-LS")
+        dir_id = self.mega.find_path_descriptor(dir_, self.filelist)
+        files_in_node = self.mega.get_files_in_node(dir_id)
+        # doc_files = mega.get_files_in_node(2)
+        # pp.pprint(doc_files)
+        # nested_files = mega.get_files_in_node(nested_desc)
+        m_dict = MegaDict(files_in_node)
+        folder_list = m_dict.get_folders_list()
+        return sorted(folder_list)
 
     def put(self, file_, remotedir):
-        subprocess.run(["megaclient.exe", "put", file_, remotedir])
+        desc = self.mega.find_path_descriptor(remotedir, self.filelist)
+        remote_file = self.mega.upload(file_, dest=desc)
+        return remote_file
 
-    def share(self, remotepath):
-        complete_process = subprocess.run(["megaclient.exe", "export",
-                                           "-a", remotepath],  # noqa: E501
-                                          stdout=subprocess.PIPE,
-                                          encoding="utf-8")
-        if complete_process.returncode == 0:
-            return complete_process.stdout.splitlines()[0].split()[-1]
-        else:
-            print("Error in megaclient share (export)")
-            raise MegaException(complete_process.returncode, "MEGA-EXPORT")
+    def share(self, remote_file):
+        return self.mega.get_upload_link(remote_file)
 
 
 class MegaExplorer(tk.Toplevel):
@@ -250,6 +199,7 @@ class MegaExplorer(tk.Toplevel):
 
     def _login(self):
         self.mega.login()
+        self.mega.fetch_file_list()
         self.mega.ls_l("/")
 
     def _up(self):
@@ -277,16 +227,14 @@ class MegaExplorer(tk.Toplevel):
     def _populate_list(self):
         list_dir = self.mega.ls_l(self.folder_path)
         for dir_ in list_dir:
-            if dir_.is_dir():
-                name = dir_.get_name()
-                # print(name)
-                # full_path = file.get_path() + '/' + newName
-                # full_path = dir_.get_path()
-                if self.folder_path != '/':
-                    full_path = self.folder_path + '/' + name
-                else:
-                    full_path = '/' + name
-                self.folder_list.append({'path': full_path, 'name': name})
+            # print(name)
+            # full_path = file.get_path() + '/' + newName
+            # full_path = dir_.get_path()
+            if self.folder_path != '/':
+                full_path = self.folder_path + '/' + dir_
+            else:
+                full_path = '/' + dir_
+            self.folder_list.append({'path': full_path, 'name': dir_})
 
         [self.lb.insert(END, item["name"]) for item in self.folder_list]
 
@@ -554,13 +502,180 @@ class OutputShare(tk.Tk):
         self.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
 
+class UploadApp(tk.Tk):
+
+    def __init__(self, *args,
+                 megaclient=None, local_file=None, remote_path=None,
+                 **kwargs):
+        tk.Tk.__init__(self, *args, **kwargs)
+        # self.overrideredirect(1)
+        # self.wm_attributes('-type', 'splash')
+
+        self.withdraw()
+
+        self.local_file = sys.argv[1]
+
+        self.megaclient = megaclient
+        self.local_file = local_file
+        self.basename = get_base_name(self.local_file)
+        self.remote_path = remote_path
+
+        self.mega_file = None
+
+        # self.wm_attributes('-type', 'splash')
+
+        self.title("Progression")
+
+        self.progress = ttk.Progressbar(self, orient="horizontal",
+                                        length=400, mode="determinate")
+        self.progress.pack()
+
+        self.bytes = 0
+        self.maxbytes = 0
+        self._center()
+        self.deiconify()
+        self.upload()
+
+    def _center(self):
+        self.update_idletasks()
+        width = self.winfo_reqwidth()
+        height = self.winfo_reqheight()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
+    def upload(self):
+        desc = self.megaclient.mega.find_path_descriptor(self.remote_path, self.megaclient.filelist)  # noqa: E501
+        self.mega_file = self._put_file_chunked(self.local_file, dest=desc)
+        print("End of progressbar window")
+        self.destroy()
+
+    # This code comes from pyocclient
+    # https://github.com/owncloud/pyocclient
+    # and has been modified to implement progressbar
+    def _put_file_chunked(self, filename, dest=None, dest_filename=None):
+
+        # determine storage node
+        if dest is None:
+            # if none set, upload to cloud drive node
+            if not hasattr(self.megaclient.mega, 'root_id'):
+                self.megaclient.mega.get_files()
+            dest = self.megaclient.mega.root_id
+
+        # request upload url, call 'u' method
+        with open(filename, 'rb') as input_file:
+            file_size = os.path.getsize(filename)
+
+            self.progress["value"] = 0
+            self.maxbytes = file_size
+            self.progress["maximum"] = file_size
+
+            ul_url = self.megaclient.mega._api_request({'a': 'u', 's': file_size})['p']
+
+            # generate random aes key (128) for file
+            ul_key = [random.randint(0, 0xFFFFFFFF) for _ in range(6)]
+            k_str = a32_to_str(ul_key[:4])
+            count = Counter.new(
+                128, initial_value=((ul_key[4] << 32) + ul_key[5]) << 64
+            )
+            aes = AES.new(k_str, AES.MODE_CTR, counter=count)
+
+            upload_progress = 0
+            completion_file_handle = None
+
+            mac_str = '\0' * 16
+            mac_encryptor = AES.new(k_str, AES.MODE_CBC, mac_str.encode("utf8"))  # noqa: E501
+            iv_str = a32_to_str([ul_key[4], ul_key[5], ul_key[4], ul_key[5]])
+            if file_size > 0:
+                for chunk_start, chunk_size in get_chunks(file_size):
+                    chunk = input_file.read(chunk_size)
+                    upload_progress += len(chunk)
+
+                    encryptor = AES.new(k_str, AES.MODE_CBC, iv_str)
+                    for i in range(0, len(chunk) - 16, 16):
+                        block = chunk[i:i + 16]
+                        encryptor.encrypt(block)
+
+                    # fix for files under 16 bytes failing
+                    if file_size > 16:
+                        i += 16
+                    else:
+                        i = 0
+
+                    block = chunk[i:i + 16]
+                    if len(block) % 16:
+                        block += makebyte('\0' * (16 - len(block) % 16))
+                    mac_str = mac_encryptor.encrypt(encryptor.encrypt(block))
+
+                    # encrypt file and upload
+                    chunk = aes.encrypt(chunk)
+                    output_file = requests.post(
+                        ul_url + "/" + str(chunk_start),
+                        data=chunk,
+                        timeout=self.megaclient.mega.timeout
+                    )
+                    completion_file_handle = output_file.text
+                    logger.info(
+                        '%s of %s uploaded', upload_progress, file_size
+                    )
+
+                    self.progress["value"] = upload_progress
+                    self.update()
+
+            else:
+                output_file = requests.post(
+                    ul_url + "/0", data='', timeout=self.megaclient.mega.timeout
+                )
+                completion_file_handle = output_file.text
+
+            logger.info('Chunks uploaded')
+            logger.info('Setting attributes to complete upload')
+            logger.info('Computing attributes')
+            file_mac = str_to_a32(mac_str)
+
+            # determine meta mac
+            meta_mac = (file_mac[0] ^ file_mac[1], file_mac[2] ^ file_mac[3])
+
+            dest_filename = dest_filename or os.path.basename(filename)
+            attribs = {'n': dest_filename}
+
+            encrypt_attribs = base64_url_encode(
+                encrypt_attr(attribs, ul_key[:4])
+            )
+            key = [
+                ul_key[0] ^ ul_key[4], ul_key[1] ^ ul_key[5],
+                ul_key[2] ^ meta_mac[0], ul_key[3] ^ meta_mac[1], ul_key[4],
+                ul_key[5], meta_mac[0], meta_mac[1]
+            ]
+            encrypted_key = a32_to_base64(encrypt_key(key, self.megaclient.mega.master_key))
+            logger.info('Sending request to update attributes')
+            # update attributes
+            data = self.megaclient.mega._api_request(
+                {
+                    'a': 'p',
+                    't': dest,
+                    'i': self.megaclient.mega.request_id,
+                    'n': [
+                        {
+                            'h': completion_file_handle,
+                            't': 0,
+                            'a': encrypt_attribs,
+                            'k': encrypted_key
+                        }
+                    ]
+                }
+            )
+            logger.info('Upload complete')
+            return data
+
+
 # setup_logging()
 # logger = logging.getLogger(__name__)
 # logger.info('Startlogging:')
 
 # MAIN PROGRAM here :
 
-with open("conf.json", encoding='utf-8') as json_file:
+with open(config_file, encoding='utf-8') as json_file:
     data = json.load(json_file, encoding="utf-8")
 
 app = AccountChoice(config=data)
@@ -579,7 +694,7 @@ megaclient = MegaClient(data[account])
 print("megaclient instantiated")
 
 # MAIN PROGRAM here :
-app2 = PathChoice(file_="conf.json", account=account, mega=megaclient)
+app2 = PathChoice(file_=config_file, account=account, mega=megaclient)
 app2.protocol("WM_DELETE_WINDOW", app2._quit)
 app2.mainloop()
 
@@ -624,15 +739,15 @@ else:
     sys.exit(1)
 
 try:
-    megaclient.put(local_file, cloud_dir)
+    app = UploadApp(megaclient=megaclient,
+                    local_file=local_file,
+                    remote_path=cloud_dir)
+    app.mainloop()
+    cloud_file = app.mega_file
 except Exception as e:
     print(e)
 
-# # Remote path of the file :
-cloud_file = cloud_dir + '/' + basename
-# print(cloud_file)
-# # Share the file
-# share = oc.share_file_with_link(cloud_file).get_link()
+
 share = megaclient.share(cloud_file)
 print(share)
 
@@ -641,20 +756,17 @@ if zipfile.is_zipfile(local_file) and cover_bool:
     cover = extract_cover(local_file)
     # print(cover)
 
-    casi_upload = Casimages(cover, size=redim_val)
-    casi_upload.upload_cover()
-    cover_url = casi_upload.get_share_url()
-
-    # print("**********************************************")
-    # print(share)
-    # print(cover_url)
+    casi_upload = Casim(cover, resize=redim_val)
+    cover_url = casi_upload.get_link()
+    os.remove(cover)
 
     if variant_bool:
         variant = extract_cover(local_file, index=1)
         print(variant)
-        casi_upload = Casimages(variant, size=redim_val)
+        casi_upload = Casim(variant, size=redim_val)
         casi_upload.upload_cover()
         variant_url = casi_upload.get_share_url()
+        os.remove(variant)
         print(variant_url)
         print(f"[url={share}][img]{cover_url}[/img] [img]{variant_url}[/img][/url]")  # noqa:E501
     else:

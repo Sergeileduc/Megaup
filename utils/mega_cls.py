@@ -1,13 +1,11 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
 """Doc."""
 import logging
 
 
-class MegaJson():
+class MegaDict():
 
-    def __init__(self, json_):
-        self.json = json_
+    def __init__(self, dict_):
+        self.input_dict = dict_
         # self.list = [{"name": v['a']['n'],
         #               "descr": v['h'],
         #               "type": v['t']}
@@ -20,7 +18,7 @@ class MegaJson():
         self.user_dict = {v['a']['n']: MegaElement(name=v['a']['n'],
                                                    descr=v['h'],
                                                    type_=v['t'])
-                          for v in self.json.values()}
+                          for v in self.input_dict.values()}
 
     def get_folders_list(self):
         """Return list of folders names.
