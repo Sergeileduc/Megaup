@@ -11,5 +11,13 @@ Workflow
 test_dict.py
 my_tests/conf.json
 conf.json
+.env
 
 .venv/
+
+build/
+dist/
+
+*.cbz
+*.cbr
+*.odt
