@@ -17,6 +17,7 @@ conf.json
 
 build/
 dist/
+*.spec
 
 *.cbz
 *.cbr
