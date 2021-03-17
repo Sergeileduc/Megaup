@@ -34,7 +34,7 @@ from mega.crypto import (
 # from pathlib import Path
 
 from mega import Mega
-from py_casim import Casim
+from py_casim import Casim, CasimLogged
 from utils.mega_accounts_choice import AccountChoice
 from utils.tools import extract_cover, get_base_name, no_ext
 from utils.mega_cls import MegaDict
@@ -359,7 +359,7 @@ class PathChoice(tk.Tk):
 
     def _read_file(self):
         with open(self.conf_file, encoding='utf-8') as json_file:
-            self.data = json.load(json_file, encoding="utf-8")
+            self.data = json.load(json_file)
 
     def _read_fav(self):
         self.paths_list = self.data[self.account]["fav"]
@@ -712,7 +712,9 @@ class UploadApp(tk.Tk):
 # MAIN PROGRAM here :
 
 with open(config_file, encoding='utf-8') as json_file:
-    data = json.load(json_file, encoding="utf-8")
+    data = json.load(json_file)
+
+casim_account = data.get("Casimages")
 
 app = AccountChoice(config=data)
 app.protocol("WM_DELETE_WINDOW", app._quit)
@@ -787,19 +789,39 @@ except Exception as e:
 share = megaclient.share(cloud_file)
 print(share)
 
+print(casim_account)
+
 if zipfile.is_zipfile(local_file) and cover_bool:
     print("Is zip AND with cover upload")
     cover = extract_cover(local_file)
     # print(cover)
 
-    casi_upload = Casim(cover, resize=redim_val)
+    if casim_account:
+        if casim_account.get("login") and casim_account.get("passwd"):
+            casi_upload = CasimLogged(cover, resize=redim_val)
+            casi_upload.login(casim_account.get("login"),
+                            casim_account.get("passwd"))
+            casi_upload.change_folder(casim_account.get("folder"))
+        else:
+            casi_upload = Casim(cover, resize=redim_val)
+    else:
+        casi_upload = Casim(cover, resize=redim_val)
     cover_url = casi_upload.get_link()
     os.remove(cover)
 
     if variant_bool:
         variant = extract_cover(local_file, index=1)
         print(variant)
-        casi_upload = Casim(variant, resize=redim_val)
+        if casim_account:
+            if casim_account.get("login") and casim_account.get("passwd"):
+                casi_upload = CasimLogged(variant, resize=redim_val)
+                casi_upload.login(casim_account.get("login"),
+                                casim_account.get("passwd"))
+                casi_upload.change_folder(casim_account.get("folder"))
+            else:
+                casi_upload = Casim(variant, resize=redim_val)
+        else:
+            casi_upload = Casim(variant, resize=redim_val)
         variant_url = casi_upload.get_link()
         os.remove(variant)
         print(variant_url)

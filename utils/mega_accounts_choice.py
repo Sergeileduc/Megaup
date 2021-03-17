@@ -10,6 +10,11 @@ class AccountChoice(tk.Tk):
 
         self.title("Choix du compte Mega")
         self.conf = config
+        # Delete Casimages from the config dict, as it is not a Mega account
+        try:
+            self.conf.pop("Casimages")
+        except KeyError:
+            pass
 
         self.selected_account = ""
 
