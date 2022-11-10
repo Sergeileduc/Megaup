@@ -484,6 +484,38 @@ class OutputShare(tk.Tk):
             self.w4.mark_set(INSERT, "1.0")
             self.w4.see(INSERT)
             self.w4.pack(pady=10, fill="both", expand=1)
+        
+        # 4th line :
+        newbbcode = ("[rl]\n"
+                     "    [case]\n"
+                     "        [rlimg={},{}]\n"
+                     "    [/case]\n"
+                     "[/rl]")
+        if self.with_cover and not self.with_variant:
+            self.w5 = tk.Text(self, width=120, height=6, font=("Helvetica", 11),  # noqa:E501
+                              exportselection=1)
+            self.w5.insert(1.0, newbbcode.format(self.cover, self.share))
+            self.w5.tag_add(SEL, "1.0", END)
+            self.w5.mark_set(INSERT, "1.0")
+            self.w5.see(INSERT)
+            self.w5.pack(pady=10, fill="both", expand=1)
+        
+        newbbcode2 = ("[rl2]\n"
+                      "    [case]\n"
+                      "        [rlimg={},{}]\n"
+                      "    [/case]\n"
+                      "    [case]\n"
+                      "        [rlimg={},{}]\n"
+                      "    [/case]\n"
+                      "[/rl2]")
+        if self.with_cover and self.with_variant:
+            self.w6 = tk.Text(self, width=120, height=10, font=("Helvetica", 11),  # noqa:E501
+                              exportselection=1)
+            self.w6.insert(1.0, newbbcode2.format(self.cover, self.share, self.variant, self.share))
+            self.w6.tag_add(SEL, "1.0", END)
+            self.w6.mark_set(INSERT, "1.0")
+            self.w6.see(INSERT)
+            self.w6.pack(pady=10, fill="both", expand=1)
 
         self._center()
         self.deiconify()
