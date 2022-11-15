@@ -1,4 +1,4 @@
-py-casim==1.2.3
+py-casim==2.0.2
 mega.py==1.0.8
-pycryptodome==3.9.9
+pycryptodome==3.15
 python-dotenv
