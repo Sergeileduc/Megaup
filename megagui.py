@@ -484,7 +484,7 @@ class OutputShare(tk.Tk):
             self.w4.mark_set(INSERT, "1.0")
             self.w4.see(INSERT)
             self.w4.pack(pady=10, fill="both", expand=1)
-        
+
         # 4th line :
         newbbcode = ("[rl]\n"
                      "    [case]\n"
@@ -499,7 +499,7 @@ class OutputShare(tk.Tk):
             self.w5.mark_set(INSERT, "1.0")
             self.w5.see(INSERT)
             self.w5.pack(pady=10, fill="both", expand=1)
-        
+
         newbbcode2 = ("[rl2]\n"
                       "    [case]\n"
                       "        [rlimg={},{}]\n"
@@ -800,7 +800,7 @@ if zipfile.is_zipfile(local_file) and cover_bool:
         if casim_account.get("login") and casim_account.get("passwd"):
             casi_upload = CasimLogged(cover, resize=redim_val)
             casi_upload.login(casim_account.get("login"),
-                            casim_account.get("passwd"))
+                              casim_account.get("passwd"))
             casi_upload.change_folder(casim_account.get("folder"))
         else:
             casi_upload = Casim(cover, resize=redim_val)
@@ -816,7 +816,7 @@ if zipfile.is_zipfile(local_file) and cover_bool:
             if casim_account.get("login") and casim_account.get("passwd"):
                 casi_upload = CasimLogged(variant, resize=redim_val)
                 casi_upload.login(casim_account.get("login"),
-                                casim_account.get("passwd"))
+                                  casim_account.get("passwd"))
                 casi_upload.change_folder(casim_account.get("folder"))
             else:
                 casi_upload = Casim(variant, resize=redim_val)
