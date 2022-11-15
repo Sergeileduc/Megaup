@@ -256,7 +256,7 @@ class PathChoice(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
         self.withdraw()
 
-        self.title("Choix du chemin Owncloud")
+        self.title("Choix du chemin Méga")
 
         # self.conf_file = os.path.join(Path.home(), file_)
         self.conf_file = file_
