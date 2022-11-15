@@ -1,0 +1,32 @@
+{
+    "Casimages": {
+        "login": "adresse@mail.com",
+        "passwd": "pass1234",
+        "folder": ""
+    },
+    "Perso": {
+        "login": "adresse@mail.com",
+        "passwd": "1234",
+        "fav": []
+    },
+    "DC Nouveautés": {
+        "login": "megadc4@tradunity.net",
+        "passwd": "1234",
+        "fav": []
+    },
+    "Marvel Nouveautés": {
+        "login": "megamarvel3@tradunity.net",
+        "passwd": "1234",
+        "fav": []
+    },
+    "Compte Vide 1": {
+        "login": "foo",
+        "passwd": "bar",
+        "fav": []
+    },
+    "Compte Vide 2": {
+        "login": "foo",
+        "passwd": "bar",
+        "fav": []
+    }
+}
