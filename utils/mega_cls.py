@@ -4,16 +4,8 @@ import logging
 
 class MegaDict():
 
-    def __init__(self, dict_):
+    def __init__(self, dict_: dict):
         self.input_dict = dict_
-        # self.list = [{"name": v['a']['n'],
-        #               "descr": v['h'],
-        #               "type": v['t']}
-        #              for v in self.json.values()]
-        # self.list = [MegaElement(name=v['a']['n'],
-        #                          descr=v['h'],
-        #                          type_=v['t'])
-        #              for v in self.json.values()]
         # user dict is like {"documents": megaelement}
         self.user_dict = {v['a']['n']: MegaElement(name=v['a']['n'],
                                                    descr=v['h'],
@@ -42,21 +34,29 @@ class MegaDict():
 
 
 class MegaElement():
+    """A simple representation of a Mega Element, sith name, ID, and type.
 
-    def __init__(self, name, descr, type_):
+    Args:
+        name (str): name of the element.
+        descr (str): unique ID of element.
+        type (int): type of the element.
+
+    Attributes:
+        name (str): name of the element.
+        descr (str): unique ID of element.
+        type (int): type of the element.
+        isfile (bool): if element is a file.
+        isfolder (bool): if element is a folder.
+
+    """
+
+    def __init__(self, name: str, descr: str, type_: int):
         self.name = name
         self.descr = descr
         self.type = type_
-        if type_ == 0:
-            self.isfolder = False
-            self.isfile = True
-        elif type_ == 1:
-            self.isfolder = True
-            self.isfile = False
-        else:
-            logging.warning("Incorrect value for t")
-            self.isfolder = False
-            self.isfile = False
+        self.isfolder = True if type_== 1 else False
+        self.isfile = True if type == 0 else False
+            
 
     def __str__(self):
         return f"{self.name:20} | {self.descr:10} | {self.type}"

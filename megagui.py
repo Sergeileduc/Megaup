@@ -42,6 +42,7 @@ from utils.mega_cls import MegaDict
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# TODO : use Pathlib Path
 dir_path = os.path.dirname(os.path.realpath(__file__))
 config_file = os.path.join(dir_path, "conf.json")
 

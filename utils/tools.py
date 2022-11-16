@@ -6,7 +6,6 @@ def get_base_name(local_file):
     """Get file basename."""
     if os.path.isfile(local_file):
         basename = os.path.basename(local_file)
-        # print(f"Basename is : {basename}")
         return basename
 
 
